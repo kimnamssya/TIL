@@ -1,4 +1,4 @@
-### Change truecolor image to grayscale image
+##### Change truecolor image to grayscale image
 ---------------------
   
 ## 1. Bitmap 파일 구조 알기
