@@ -228,4 +228,7 @@ padding = (PIXEL_ALIGN - ((width * PIXEL_SIZE) % PIXEL_ALIGN)) % PIXEL_ALIGN;
 		}
 	}
 ~~~
-실제로 픽셀 데이터 값을 변경하는 코드입니다. 
+* 실제로 픽셀 데이터 값을 변경하는 코드입니다. 중요한 점은 bitmap image는 상하 반전이 된 채로 저장이 되어 있으므로 읽어올 때 마지막 줄부터 읽어와야 한다는 점입니다. 
+* 픽셀은 R, G, B 각각 1byte씩, 총 3byte이므로 index는 3byte 단위로 이동해야합니다. 
+* image 포인터에 RGBTRIPLE 구조체 포인터로의 형 변환을 수행하여 blue, green, red 전체에 접근할 수 있도록 합니다.
+* 해당 픽셀의 blue, green, red 값을 모두 세 값의 평균 값으로 변경합니다.
