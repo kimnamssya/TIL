@@ -179,3 +179,53 @@ padding = PIXEL_ALIGN - (width * PIXEL_SIZE) % PIXEL_ALIGN;
 padding = (PIXEL_ALIGN - ((width * PIXEL_SIZE) % PIXEL_ALIGN)) % PIXEL_ALIGN;
 ~~~
 
+~~~C
+	if (size == 0)   
+	{
+		size = (width * PIXEL_SIZE + padding) * height;
+	}
+~~~
+위에서 바이너리 코드를 해석할 때, 압축을 하지 않았을 때는 biSizeImage 값이 0임을 알 수 있었습니다. 따라서 이러한 경우에 대비하여 size를 계산하는 코드를 추가로 작성합니다. 
+
+~~~C
+	image = (char*)malloc(size);
+
+	if (fread(image, size, 1, fpBmp) < 1)
+	{
+		fclose(fpBmp);
+		return 0;
+	}
+
+	fclose(fpBmp);
+
+	fpResult = fopen("lena512_gray.bmp", "w");
+	if (fpResult == NULL)
+	{
+		free(image);
+		return 0;
+	}
+~~~
+픽셀 데이터 저장을 위한 image에 메모리를 픽셀 데이터 크기만큼 동적 할당하고, fread를 통해 바이너리 코드를 읽어줍니다. 또한, grayscale로 변경된 이미지를 저장하기 위한 파일 포인터 또한 열어줍니다.
+
+~~~C
+	for (int y = height - 1; y >= 0; y--)
+	{
+		for (int x = 0; x < width; x++)
+		{
+			int index = (x * PIXEL_SIZE) + (y * (width * PIXEL_SIZE)) + (padding * y);
+
+			RGBTRIPLE *pixel = (RGBTRIPLE *)&image[index];
+
+			unsigned char blue = pixel->rgbtBlue;
+			unsigned char green = pixel->rgbtGreen;
+			unsigned char red = pixel->rgbtRed;
+
+			unsigned char gray = (red + green + blue) / PIXEL_SIZE;
+
+			pixel->rgbtBlue = gray;
+			pixel->rgbtGreen = gray;
+			pixel->rgbtRed = gray;
+		}
+	}
+~~~
+실제로 픽셀 데이터 값을 변경하는 코드입니다. 
