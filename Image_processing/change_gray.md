@@ -68,4 +68,48 @@ bitmap file은 다음과 같은 구조로 이루어져 있습니다.
 |00 00 00 00|색상 테이블이 존재하지 않으므로 0이 저장됩니다.|
 |00 00 00 00|마찬가지로 0이 저장됩니다.|
 
+## 3. 문제 해결 순서  
+파일을 읽어온다는 것은 해당 파일의 바이너리 코드를 읽어오는 것입니다. 그렇다면 해당 파일의 바이너리 코드를 읽어오고, 비트맵 파일 헤더와 비트맵 정보 헤더의 정보를 통해 어떤 이미지인지 파악한 뒤, 픽셀 데이터의 R, G, B 값을 수정해준다면 문제 해결이 가능할 것 입니다. 이를 다음과 같이 간단하게 정리할 수 있습니다.  
 
+1. 비트맵 파일과 같은 모양의 구조체 작성
+2. 작성한 구조체에 비트맵 파일 헤더, 비트맵 정보 헤더, 픽셀 데이터 읽어와서 저장
+3. 픽셀 데이터 구조체의 값 수정(Grayscale: R, G, B값을 세 값의 평균으로 바꾸면 흑백 이미지가 됩니다.)
+4. 수정된 구조체의 값을 통해 파일 생성
+
+## 3. 문제 해결
+앞서 정리한 Bitmap file의 구조체를 다음과 같이 작성할 수 있습니다. 
+~~~
+#pragma pack(push, 1)
+typedef struct _BITMAPFILEHEADER
+{
+	unsigned short   bfType;
+	unsigned int   bfSize;         
+	unsigned short bfReserved1;   
+	unsigned short bfReserved2;     
+	unsigned int   bfOffBits;
+} BITMAPFILEHEADER;
+
+typedef struct _BITMAPINFOHEADER   
+{
+	unsigned int   biSize;         
+	int            biWidth;         
+	int            biHeight;      
+	unsigned short biPlanes;     
+	unsigned short biBitCount;     
+	unsigned int   biCompression;   
+	unsigned int   biSizeImage;      
+	int            biXPelsPerMeter; 
+	int            biYPelsPerMeter; 
+	unsigned int   biClrUsed;        
+	unsigned int   biClrImportant; 
+} BITMAPINFOHEADER;
+
+typedef struct _RGBTRIPLE           
+{
+	unsigned char rgbtBlue;         
+	unsigned char rgbtGreen;        
+	unsigned char rgbtRed;         
+} RGBTRIPLE;
+#pragma pack(pop)
+~~~
+***pragma pack: 32bits CPU는 구조체 내부의 변수에 메모리를 할당할 때 4Byte 단위로 할당하게 됩니다. 즉, BITMAPFILEHEADER의 경우 short + int + short + short + int = 14 byte가 할당될 것 같지만 실제로는 padding을 포함해 16 Byte가 할당됩니다. 따라서 1 Byte 단위로 할당할 수 있게 처리를 해주어야 하는데, 그 역할을 하는 명령어가 pragma pack 입니다.***
