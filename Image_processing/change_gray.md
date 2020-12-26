@@ -115,7 +115,7 @@ typedef struct _RGBTRIPLE
 ~~~
 
 **pragma pack이란?**
->*32bits CPU는 구조체 내부의 변수에 메모리를 할당할 때 4Byte 단위로 할당하게 됩니다. 즉, BITMAPFILEHEADER의 경우 short + int + short + short + int = 14 byte가 할당될 것 같지만 실제로는 padding을 포함해 16 Byte가 할당됩니다. 따라서 1 Byte 단위로 할당할 수 있게 처리를 해주어야 하는데, 그 역할을 하는 명령어가 pragma pack 입니다.*
+>*예를 들어 32bits CPU는 구조체 내부의 변수에 메모리를 할당할 때 4Byte 단위로 할당하게 됩니다(64bits는 8Byte). 즉, BITMAPFILEHEADER의 경우 short + int + short + short + int = 14 byte가 할당될 것 같지만 실제로는 padding을 포함해 16 Byte가 할당됩니다. 따라서 1 Byte 단위로 할당할 수 있게 처리를 해주어야 하는데, 그 역할을 하는 명령어가 pragma pack 입니다.*
 
 -----------
 ~~~C
@@ -173,7 +173,7 @@ int main()
 * 편의를 위해 이미지의 size, width, height를 새로운 변수로 지정하고 padding을 계산합니다.
 
 padding이란?
->*32bits CPU는 데이터를 처리할 때 4byte 단위로 접근합니다. 따라서 비트맵 포맷은 효율적인 데이터 처리를 위해 픽셀 데이터의 가로 크기가 4의 배수가 아니라면 남는 공간에 0을 채워 4의 배수로 만들어 저장합니다. 이 남는 공간을 padding이라고 하고, 픽셀 데이터를 읽기 위해서는 padding이 얼마나 채워졌는지 알아야 합니다.*
+>*비트맵 포맷은 효율적인 데이터 처리를 위해 픽셀 데이터의 가로 크기가 4의 배수가 아니라면 남는 공간에 0을 채워 4의 배수로 만들어 저장합니다. 이 남는 공간을 padding이라고 하고, 픽셀 데이터를 읽기 위해서는 padding이 얼마나 채워졌는지 알아야 합니다.*
 
 예를들어 pixel이 9개 존재한다면, pixel당 3byte(R, G, B)가 사용되므로 27Byte의 공간을 차지하게 되고, 이는 4의 배수가 아닙니다. 따라서 이를 4로 나눈 나머지인 3으로 남는 공간이 4 - 3 = 1byte임을 알 수 있습니다(1Byte를 padding으로 채우면 4의 배수가 된다는 뜻입니다). 
 ~~~C
