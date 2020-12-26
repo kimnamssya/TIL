@@ -1,4 +1,5 @@
 # Change truecolor image to grayscale image (컬러사진 -> 흑백사진) 
+아래 내용은 'C언어 코딩 도장'의 <Unit 81. 실전예제: 비트맵 파일을 아스키 아트로 변환하기> 부분을 상당 부분 참고하여 작성한 내용입니다. 
 
 ## 1. Bitmap 파일 구조 알기
 bitmap file은 다음과 같은 구조로 이루어져 있습니다.
@@ -35,7 +36,7 @@ bitmap file은 다음과 같은 구조로 이루어져 있습니다.
 |biClrImportant|4|색상 인덱스의 수|
 
 ### 픽셀 데이터  
-픽셀 데이터에는 다음과 같이 R, G, B 값이 저장되어 있습니다.
+픽셀 데이터에는 다음과 같이 **R, G, B 값**이 저장되어 있습니다.
 |멤버| 바이트| 정보|
 |---|:----:|---|
 |rgbtBlue|1|blue 0~255|
@@ -116,6 +117,7 @@ typedef struct _RGBTRIPLE
 **pragma pack이란?**
 >*32bits CPU는 구조체 내부의 변수에 메모리를 할당할 때 4Byte 단위로 할당하게 됩니다. 즉, BITMAPFILEHEADER의 경우 short + int + short + short + int = 14 byte가 할당될 것 같지만 실제로는 padding을 포함해 16 Byte가 할당됩니다. 따라서 1 Byte 단위로 할당할 수 있게 처리를 해주어야 하는데, 그 역할을 하는 명령어가 pragma pack 입니다.*
 
+-----------
 ~~~C
 int main() 
 {
@@ -129,8 +131,9 @@ int main()
 	int width, height;
 	int padding;
 ~~~
-파일의 헤더 정보를 담을 수 있게 fileHeader, infoHeader를 선언하고 각종 변수를 선언합니다.
+* 파일의 헤더 정보를 담을 수 있게 fileHeader, infoHeader를 선언하고 각종 변수를 선언합니다.
 
+-------------
 ~~~C
 	fpBmp = fopen("lena512.bmp","rb");
 
@@ -160,13 +163,14 @@ int main()
 * 읽어온 fileHeader의 멤버 bfType의 값은 'MB'이어야 합니다. 파일에 'BM' 순으로 저장되어 있었으므로, 메모리에 올라왔을 때는 little endian 방식에 의해 역순인 'MB'로 올라오기 때문입니다.
 * 마찬가지 방식으로 BITMAPINFOHEADER를 읽어옵니다.
 
+----------
 ~~~C
 	size = infoHeader.biSizeImage;
 	width = infoHeader.biWidth;
 	height = infoHeader.biHeight;
 	padding = (PIXEL_ALIGN - ((width * PIXEL_SIZE) % PIXEL_ALIGN)) % PIXEL_ALIGN;
 ~~~
-편의를 위해 이미지의 size, width, height를 새로운 변수로 지정하고 padding을 계산합니다.
+* 편의를 위해 이미지의 size, width, height를 새로운 변수로 지정하고 padding을 계산합니다.
 
 padding이란?
 >*32bits CPU는 데이터를 처리할 때 4byte 단위로 접근합니다. 따라서 비트맵 포맷은 효율적인 데이터 처리를 위해 픽셀 데이터의 가로 크기가 4의 배수가 아니라면 남는 공간에 0을 채워 4의 배수로 만들어 저장합니다. 이 남는 공간을 padding이라고 하고, 픽셀 데이터를 읽기 위해서는 padding이 얼마나 채워졌는지 알아야 합니다.*
@@ -179,16 +183,17 @@ padding = PIXEL_ALIGN - (width * PIXEL_SIZE) % PIXEL_ALIGN;
 ~~~C
 padding = (PIXEL_ALIGN - ((width * PIXEL_SIZE) % PIXEL_ALIGN)) % PIXEL_ALIGN;
 ~~~
-------------
 
+------------
 ~~~C
 	if (size == 0)   
 	{
 		size = (width * PIXEL_SIZE + padding) * height;
 	}
 ~~~
-위에서 바이너리 코드를 해석할 때, 압축을 하지 않았을 때는 biSizeImage 값이 0임을 알 수 있었습니다. 따라서 이러한 경우에 대비하여 size를 계산하는 코드를 추가로 작성합니다. 
+* 위에서 바이너리 코드를 해석할 때, 압축을 하지 않았을 때는 biSizeImage 값이 0임을 알 수 있었습니다. 따라서 이러한 경우에 대비하여 size를 계산하는 코드를 추가로 작성합니다. 
 
+----------
 ~~~C
 	image = (char*)malloc(size);
 
@@ -207,8 +212,9 @@ padding = (PIXEL_ALIGN - ((width * PIXEL_SIZE) % PIXEL_ALIGN)) % PIXEL_ALIGN;
 		return 0;
 	}
 ~~~
-픽셀 데이터 저장을 위한 image에 메모리를 픽셀 데이터 크기만큼 동적 할당하고, fread를 통해 바이너리 코드를 읽어줍니다. 또한, grayscale로 변경된 이미지를 저장하기 위한 파일 포인터 또한 열어줍니다.
+* 픽셀 데이터 저장을 위한 image에 메모리를 픽셀 데이터 크기만큼 동적 할당하고, fread를 통해 바이너리 코드를 읽어줍니다. 또한, grayscale로 변경된 이미지를 저장하기 위한 파일 포인터 또한 열어줍니다.
 
+-------------
 ~~~C
 	for (int y = height - 1; y >= 0; y--)
 	{
@@ -253,7 +259,7 @@ padding = (PIXEL_ALIGN - ((width * PIXEL_SIZE) % PIXEL_ALIGN)) % PIXEL_ALIGN;
 	return 0;
 }
 ~~~
-fileHeader와 infoHeader의 정보는 변함이 없고, image가 가리키는 픽셀 데이터 정보는 앞선 코드에 의해 수정이 되어있습니다. 따라서 fwrite 함수를 통해 출력 파일에 바이너리 코드를 써주면 grayscale로 수정된 형태의 bmp 파일이 생성됩니다.
+* fileHeader와 infoHeader의 정보는 변함이 없고, image가 가리키는 픽셀 데이터 정보는 앞선 코드에 의해 수정이 되어있습니다. 따라서 fwrite 함수를 통해 출력 파일에 바이너리 코드를 써주면 grayscale로 수정된 형태의 bmp 파일이 생성됩니다.
 
 ## 5. 전체 코드와 실행 결과
 ~~~C
@@ -389,3 +395,4 @@ int main()
 }
 ~~~
 
+![캡처](https://user-images.githubusercontent.com/48755185/103156904-edaa0d80-47f0-11eb-8bdc-5f05068a1290.JPG)
