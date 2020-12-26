@@ -78,7 +78,7 @@ bitmap file은 다음과 같은 구조로 이루어져 있습니다.
 
 ## 3. 문제 해결
 앞서 정리한 Bitmap file의 구조체를 다음과 같이 작성할 수 있습니다. 
-~~~C:bitmap_gray.c
+~~~C
 #pragma pack(push, 1)
 typedef struct _BITMAPFILEHEADER
 {
@@ -115,7 +115,7 @@ typedef struct _RGBTRIPLE
 pragma pack이란? 
 >*32bits CPU는 구조체 내부의 변수에 메모리를 할당할 때 4Byte 단위로 할당하게 됩니다. 즉, BITMAPFILEHEADER의 경우 short + int + short + short + int = 14 byte가 할당될 것 같지만 실제로는 padding을 포함해 16 Byte가 할당됩니다. 따라서 1 Byte 단위로 할당할 수 있게 처리를 해주어야 하는데, 그 역할을 하는 명령어가 pragma pack 입니다.*
 
-~~~
+~~~C
 int main() 
 {
 	FILE *fpBmp;
@@ -130,7 +130,7 @@ int main()
 ~~~
 * 파일의 헤더 정보를 담을 수 있게 fileHeader, infoHeader를 선언하고 각종 변수를 선언합니다.
 
-~~~
+~~~C
 	fpBmp = fopen("lena512.bmp","rb");
 
 	if (fpBmp == NULL) return 0;
@@ -159,7 +159,7 @@ int main()
 * 읽어온 fileHeader의 멤버 bfType의 값은 'MB'이어야 합니다. 파일에 'BM' 순으로 저장되어 있었으므로, 메모리에 올라왔을 때는 little endian 방식에 의해 역순인 'MB'로 올라오기 때문입니다.
 * 마찬가지 방식으로 BITMAPINFOHEADER를 읽어옵니다.
 
-~~~
+~~~C
 	size = infoHeader.biSizeImage;
 	width = infoHeader.biWidth;
 	height = infoHeader.biHeight;
@@ -170,4 +170,12 @@ int main()
 padding이란?
 >*32bits CPU는 데이터를 처리할 때 4byte 단위로 접근합니다. 따라서 비트맵 포맷은 효율적인 데이터 처리를 위해 픽셀 데이터의 가로 크기가 4의 배수가 아니라면 남는 공간에 0을 채워 4의 배수로 만들어 저장합니다. 이 남는 공간을 padding이라고 하고, 픽셀 데이터를 읽기 위해서는 padding이 얼마나 채워졌는지 알아야 합니다.*
 
-예를들어 pixel이 9개 존재한다면, pixel당 3byte(R, G, B)가 사용되므로 27Byte의 공간을 차지하게 되고, 이는 4의 배수가 아닙니다. 따라서 이를 4로 나누어 나머지인 3을 구하면, 남는 공간이 4 - 3 = 1 byte 로 계산 됨을 알 수 있습니다(1Byte를 padding으로 채우면 4의 배수가 된다는 뜻입니다). 즉, 'padding = PIXEL_ALIGN - (width * PIXEL_SIZE) % PIXEL_ALIGN' 입니다.
+예를들어 pixel이 9개 존재한다면, pixel당 3byte(R, G, B)가 사용되므로 27Byte의 공간을 차지하게 되고, 이는 4의 배수가 아닙니다. 따라서 이를 4로 나눈 나머지인 3으로 남는 공간이 4 - 3 = 1byte임을 알 수 있습니다(1Byte를 padding으로 채우면 4의 배수가 된다는 뜻입니다). 
+~~~C
+padding = PIXEL_ALIGN - (width * PIXEL_SIZE) % PIXEL_ALIGN;
+~~~
+하지만 pixel이 12개 존재한다면, pixel당 3byte(R, G, B)가 사용되므로 36byte의 공간을 차지하게 되고, 이는 4의 배수입니다. 따라서 이를 4로 나눈 나머지는 0 이므로 위 식에 의하면 padding이 4가되는 오류가 발생합니다. 따라서 위에서 구해진 padding 값을 다시 4로 나누어 나머지가 0일 때의 오류를 수정합니다.
+~~~C
+padding = (PIXEL_ALIGN - ((width * PIXEL_SIZE) % PIXEL_ALIGN)) % PIXEL_ALIGN;
+~~~
+
