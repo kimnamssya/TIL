@@ -6,7 +6,7 @@ bitmap file은 다음과 같은 구조로 이루어져 있습니다.
   
 실습을 위한 사진 파일은 24비트 트루컬러 이미지이므로, 오른쪽처럼 색상 테이블이 없는 구조를 가집니다.    
 
-***트루컬러 이미지는 색상표현을 위해 24비트(또는 32비트)를 사용하는 이미지입니다. 각각 8비트를 가지는 R, G, B의 조합으로 표현되며 총 2^24개의 색상을 표현할 수 있습니다.***
+>*트루컬러 이미지는 색상표현을 위해 24비트(또는 32비트)를 사용하는 이미지입니다. 각각 8비트를 가지는 R, G, B의 조합으로 표현되며 총 2^24개의 색상을 표현할 수 있습니다.*
 
 ### 비트맵 파일 헤더(BITMAPFILEHEADER)  
 비트맵 파일 헤더는 다음과 같이 **파일에 대한** 정보를 포함합니다.
@@ -44,11 +44,11 @@ bitmap file은 다음과 같은 구조로 이루어져 있습니다.
 
 ## 2.바이너리 편집기로 분석하기
 ![바이너리](https://user-images.githubusercontent.com/48755185/103153688-ac583480-47d5-11eb-8451-e3036820437a.JPG)  
-***Visual Studio -> 파일 -> 열기 -> 파일 -> 파일 선택 -> 열기 옆 화살표 -> 바이너리 편집기***
+>*Visual Studio -> 파일 -> 열기 -> 파일 -> 파일 선택 -> 열기 옆 화살표 -> 바이너리 편집기*
 
 실습 이미지를 바이너리 편집기로 열면 위와 같은 화면이 나타납니다.    
 
-***인텔 계열의 CPU는 little endian 방식으로 데이터를 메모리에 올립니다. 이는 메모리의 낮은 주소에 데이터의 하위 바이트를 저장하는 방식입니다. 따라서 올바르게 정보를 읽기 위해서는 데이터의 바이너리 값이 역순으로 저장되어 있어야, 데이터를 메모리에 올려 정보를 읽을 때 올바른 값이 나오게 됩니다.***
+>*인텔 계열의 CPU는 little endian 방식으로 데이터를 메모리에 올립니다. 이는 메모리의 낮은 주소에 데이터의 하위 바이트를 저장하는 방식입니다. 따라서 올바르게 정보를 읽기 위해서는 데이터의 바이너리 값이 역순으로 저장되어 있어야, 데이터를 메모리에 올려 정보를 읽을 때 올바른 값이 나오게 됩니다.*
 
 |16진수| 해석|
 |---|---|
@@ -78,7 +78,7 @@ bitmap file은 다음과 같은 구조로 이루어져 있습니다.
 
 ## 3. 문제 해결
 앞서 정리한 Bitmap file의 구조체를 다음과 같이 작성할 수 있습니다. 
-~~~
+~~~C:bitmap_gray.c
 #pragma pack(push, 1)
 typedef struct _BITMAPFILEHEADER
 {
@@ -112,4 +112,56 @@ typedef struct _RGBTRIPLE
 } RGBTRIPLE;
 #pragma pack(pop)
 ~~~
-***pragma pack: 32bits CPU는 구조체 내부의 변수에 메모리를 할당할 때 4Byte 단위로 할당하게 됩니다. 즉, BITMAPFILEHEADER의 경우 short + int + short + short + int = 14 byte가 할당될 것 같지만 실제로는 padding을 포함해 16 Byte가 할당됩니다. 따라서 1 Byte 단위로 할당할 수 있게 처리를 해주어야 하는데, 그 역할을 하는 명령어가 pragma pack 입니다.***
+>*pragma pack: 32bits CPU는 구조체 내부의 변수에 메모리를 할당할 때 4Byte 단위로 할당하게 됩니다. 즉, BITMAPFILEHEADER의 경우 short + int + short + short + int = 14 byte가 할당될 것 같지만 실제로는 padding을 포함해 16 Byte가 할당됩니다. 따라서 1 Byte 단위로 할당할 수 있게 처리를 해주어야 하는데, 그 역할을 하는 명령어가 pragma pack 입니다.*
+
+~~~
+int main() 
+{
+	FILE *fpBmp;
+	FILE *fpResult;
+	BITMAPFILEHEADER fileHeader;
+	BITMAPINFOHEADER infoHeader;
+
+	unsigned char *image;
+	int size;
+	int width, height;
+	int padding;
+~~~
+* 파일의 헤더 정보를 담을 수 있게 fileHeader, infoHeader를 선언하고 각종 변수를 선언합니다.
+
+~~~
+	fpBmp = fopen("lena512.bmp","rb");
+
+	if (fpBmp == NULL) return 0;
+
+	if (fread(&fileHeader, sizeof(BITMAPFILEHEADER), 1, fpBmp) < 1) 
+	{
+		fclose(fpBmp);
+		return 0;
+	}
+
+	if (fileHeader.bfType != 'MB')
+	{
+		fclose(fpBmp);
+		return 0;
+	}
+
+	if (fread(&infoHeader, sizeof(BITMAPINFOHEADER), 1, fpBmp) < 1)
+	{
+		fclose(fpBmp);
+		return 0;
+	}
+~~~
+* 파일 포인터는 파일의 시작 위치에 존재합니다. 
+* 이 때, fread 함수를 통해 BITMAPFILEHEADER의 사이즈만큼 1번 read하여 fileHeader에 저장합니다. 
+* fread의 return 값은 읽기에 성공한 항목의 수 입니다. 1번 read 했으므로 return 값은 1이 되어야 합니다.
+* 읽어온 fileHeader의 멤버 bfType의 값은 'MB'이어야 합니다. 파일에 'BM' 순으로 저장되어 있었으므로, 메모리에 올라왔을 때는 little endian 방식에 의해 역순인 'MB'로 올라오기 때문입니다.
+* 마찬가지 방식으로 BITMAPINFOHEADER를 읽어옵니다.
+
+~~~
+	size = infoHeader.biSizeImage;
+	width = infoHeader.biWidth;
+	height = infoHeader.biHeight;
+	padding = (PIXEL_ALIGN - ((width * PIXEL_SIZE) % PIXEL_ALIGN)) % PIXEL_ALIGN;
+~~~
+* 편의를 위해 이미지의 size, width, height를 새로운 변수로 지정하고 padding을 계산합니다.
