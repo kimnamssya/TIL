@@ -29,8 +29,8 @@ bitmap file은 다음과 같은 구조로 이루어져 있습니다.
 |biBitCount|2|픽셀 당 비트 수(8비트 R, G, B로 이루어져 있으므로 24비트)|
 |biCompression|4|압축 방식|
 |biSizeImage|4|픽셀 데이터의 크기|
-|biXPelsPerMeter|4|가로 해상도|
-|biYPelsPerMeter|4|세로 해상도|
+|biXPelsPerMeter|4|수평 해상도|
+|biYPelsPerMeter|4|수직 해상도|
 |biClrUsed|4|색상 테이블의 사이즈|
 |biClrImportant|4|색상 인덱스의 수|
 
@@ -40,3 +40,7 @@ bitmap file은 다음과 같은 구조로 이루어져 있습니다.
 |rgbtBlue|1|blue 0~255|
 |rgbtGreen|1|green 0~255|
 |rgbtRed|1|red 0~255|
+
+#### 바이너리 편집기로 분석하기
+
+
