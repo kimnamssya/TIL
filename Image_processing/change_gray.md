@@ -170,4 +170,4 @@ int main()
 padding이란?
 >*32bits CPU는 데이터를 처리할 때 4byte 단위로 접근합니다. 따라서 비트맵 포맷은 효율적인 데이터 처리를 위해 픽셀 데이터의 가로 크기가 4의 배수가 아니라면 남는 공간에 0을 채워 4의 배수로 만들어 저장합니다. 이 남는 공간을 padding이라고 하고, 픽셀 데이터를 읽기 위해서는 padding이 얼마나 채워졌는지 알아야 합니다.*
 
-예를들어 pixel이 9개 존재한다면, pixel당 3byte(R, G, B)가 사용되므로 27Byte의 공간을 차지하게 되고, 이는 4의 배수가 아닙니다. 따라서 이를 4로 나누어 나머지인 3을 구하면, 남는 공간이 4 - 3 = 1 byte 로 계산 됨을 알 수 있습니다(1Byte를 padding으로 채우면 4의 배수가 된다는 뜻입니다). 즉, ~padding = PIXEL_ALIGN - (width * PIXEL_SIZE) % PIXEL_ALIGN~ 입니다.
+예를들어 pixel이 9개 존재한다면, pixel당 3byte(R, G, B)가 사용되므로 27Byte의 공간을 차지하게 되고, 이는 4의 배수가 아닙니다. 따라서 이를 4로 나누어 나머지인 3을 구하면, 남는 공간이 4 - 3 = 1 byte 로 계산 됨을 알 수 있습니다(1Byte를 padding으로 채우면 4의 배수가 된다는 뜻입니다). 즉, 'padding = PIXEL_ALIGN - (width * PIXEL_SIZE) % PIXEL_ALIGN' 입니다.
