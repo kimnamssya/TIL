@@ -232,3 +232,22 @@ padding = (PIXEL_ALIGN - ((width * PIXEL_SIZE) % PIXEL_ALIGN)) % PIXEL_ALIGN;
 * 픽셀은 R, G, B 각각 1byte씩, 총 3byte이므로 index는 3byte 단위로 이동해야합니다. 
 * image 포인터에 RGBTRIPLE 구조체 포인터로의 형 변환을 수행하여 blue, green, red 전체에 접근할 수 있도록 합니다.
 * 해당 픽셀의 blue, green, red 값을 모두 세 값의 평균 값으로 변경합니다.
+
+**왜 구조체 포인터를 사용하지 않고 image 포인터를 사용해서 형 변환을 할까?**
+>*픽셀 데이터를 읽어올 때, 구조체 포인터를 사용한다면 픽셀의 갯수만큼 구조체 포인터 배열를 만들어야 합니다. 하지만 C에서 배열을 선언할 때는 상수값이 들어가야하므로 애초에 선언이 불가합니다. 반면에 image 포인터를 동적 할당하여 사용한다면, size에 상관없이 모든 픽셀 데이터를 받을 수 있고 픽셀 데이터 하나하나에 인덱스로 접근이 가능하다는 이점이 있습니다.*
+
+**image 포인터를 RGBTRIPLE 구조체 포인터로 형 변환했을 때 일어나는 일**
+>*RGBTRIPLE 구조체 포인터는 3byte의 크기를 가집니다. 따라서 형 변환 하였을 때 image 포인터가 가리키는 지점으로부터 3byte만큼의 정보가 RGBTRIPLE 구조체의 멤버로 각각 들어가게 됩니다.*
+
+~~~C
+	fwrite(&fileHeader, sizeof(BITMAPFILEHEADER), 1, fpResult);
+	fwrite(&infoHeader, sizeof(BITMAPINFOHEADER), 1, fpResult);
+	fwrite(image, size, 1, fpResult);
+
+	fclose(fpResult);   
+
+	free(image);
+	return 0;
+}
+~~~
+fileHeader와 infoHeader의 정보는 변함이 없고, image가 가리키는 픽셀 데이터 정보는 앞선 코드에 의해 수정이 되어있습니다. 따라서 fwrite 함수를 통해 출력 파일에 바이너리 코드를 써주면 grayscale로 수정된 형태의 bmp 파일이 생성됩니다.
