@@ -43,7 +43,7 @@ bitmap file은 다음과 같은 구조로 이루어져 있습니다.
 |rgbtRed|1|red 0~255|
 
 ## 2.바이너리 편집기로 분석하기
-![바이너리](https://user-images.githubusercontent.com/48755185/103153688-ac583480-47d5-11eb-8451-e3036820437a.JPG)
+![바이너리](https://user-images.githubusercontent.com/48755185/103153688-ac583480-47d5-11eb-8451-e3036820437a.JPG)  
 ***Visual Studio -> 파일 -> 열기 -> 파일 -> 파일 선택 -> 열기 옆 화살표 -> 바이너리 편집기***
 
 실습 이미지를 바이너리 편집기로 열면 위와 같은 화면이 나타납니다.    
