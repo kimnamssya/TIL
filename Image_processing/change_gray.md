@@ -76,7 +76,7 @@ bitmap file은 다음과 같은 구조로 이루어져 있습니다.
 3. 픽셀 데이터 구조체의 값 수정(Grayscale: R, G, B값을 세 값의 평균으로 바꾸면 흑백 이미지가 됩니다.)
 4. 수정된 구조체의 값을 통해 파일 생성
 
-## 3. 문제 해결
+## 4. 문제 해결
 앞서 정리한 Bitmap file의 구조체를 다음과 같이 작성할 수 있습니다. 
 ~~~C
 #pragma pack(push, 1)
@@ -112,7 +112,8 @@ typedef struct _RGBTRIPLE
 } RGBTRIPLE;
 #pragma pack(pop)
 ~~~
-pragma pack이란? 
+
+**pragma pack이란?**
 >*32bits CPU는 구조체 내부의 변수에 메모리를 할당할 때 4Byte 단위로 할당하게 됩니다. 즉, BITMAPFILEHEADER의 경우 short + int + short + short + int = 14 byte가 할당될 것 같지만 실제로는 padding을 포함해 16 Byte가 할당됩니다. 따라서 1 Byte 단위로 할당할 수 있게 처리를 해주어야 하는데, 그 역할을 하는 명령어가 pragma pack 입니다.*
 
 ~~~C
@@ -128,7 +129,7 @@ int main()
 	int width, height;
 	int padding;
 ~~~
-* 파일의 헤더 정보를 담을 수 있게 fileHeader, infoHeader를 선언하고 각종 변수를 선언합니다.
+파일의 헤더 정보를 담을 수 있게 fileHeader, infoHeader를 선언하고 각종 변수를 선언합니다.
 
 ~~~C
 	fpBmp = fopen("lena512.bmp","rb");
@@ -165,7 +166,7 @@ int main()
 	height = infoHeader.biHeight;
 	padding = (PIXEL_ALIGN - ((width * PIXEL_SIZE) % PIXEL_ALIGN)) % PIXEL_ALIGN;
 ~~~
-* 편의를 위해 이미지의 size, width, height를 새로운 변수로 지정하고 padding을 계산합니다.
+편의를 위해 이미지의 size, width, height를 새로운 변수로 지정하고 padding을 계산합니다.
 
 padding이란?
 >*32bits CPU는 데이터를 처리할 때 4byte 단위로 접근합니다. 따라서 비트맵 포맷은 효율적인 데이터 처리를 위해 픽셀 데이터의 가로 크기가 4의 배수가 아니라면 남는 공간에 0을 채워 4의 배수로 만들어 저장합니다. 이 남는 공간을 padding이라고 하고, 픽셀 데이터를 읽기 위해서는 padding이 얼마나 채워졌는지 알아야 합니다.*
@@ -178,6 +179,7 @@ padding = PIXEL_ALIGN - (width * PIXEL_SIZE) % PIXEL_ALIGN;
 ~~~C
 padding = (PIXEL_ALIGN - ((width * PIXEL_SIZE) % PIXEL_ALIGN)) % PIXEL_ALIGN;
 ~~~
+------------
 
 ~~~C
 	if (size == 0)   
@@ -239,6 +241,7 @@ padding = (PIXEL_ALIGN - ((width * PIXEL_SIZE) % PIXEL_ALIGN)) % PIXEL_ALIGN;
 **image 포인터를 RGBTRIPLE 구조체 포인터로 형 변환했을 때 일어나는 일**
 >*RGBTRIPLE 구조체 포인터는 3byte의 크기를 가집니다. 따라서 형 변환 하였을 때 image 포인터가 가리키는 지점으로부터 3byte만큼의 정보가 RGBTRIPLE 구조체의 멤버로 각각 들어가게 됩니다.*
 
+----------
 ~~~C
 	fwrite(&fileHeader, sizeof(BITMAPFILEHEADER), 1, fpResult);
 	fwrite(&infoHeader, sizeof(BITMAPINFOHEADER), 1, fpResult);
@@ -251,3 +254,138 @@ padding = (PIXEL_ALIGN - ((width * PIXEL_SIZE) % PIXEL_ALIGN)) % PIXEL_ALIGN;
 }
 ~~~
 fileHeader와 infoHeader의 정보는 변함이 없고, image가 가리키는 픽셀 데이터 정보는 앞선 코드에 의해 수정이 되어있습니다. 따라서 fwrite 함수를 통해 출력 파일에 바이너리 코드를 써주면 grayscale로 수정된 형태의 bmp 파일이 생성됩니다.
+
+## 5. 전체 코드와 실행 결과
+~~~C
+#define _CRT_SECURE_NO_WARNINGS
+#include<stdio.h>
+#include<stdlib.h>
+
+#define PIXEL_SIZE   3   
+#define PIXEL_ALIGN  4
+
+#pragma pack(push, 1)
+typedef struct _BITMAPFILEHEADER
+{
+	unsigned short   bfType;
+	unsigned int   bfSize;         
+	unsigned short bfReserved1;   
+	unsigned short bfReserved2;     
+	unsigned int   bfOffBits;
+} BITMAPFILEHEADER;
+
+typedef struct _BITMAPINFOHEADER   
+{
+	unsigned int   biSize;         
+	int            biWidth;         
+	int            biHeight;      
+	unsigned short biPlanes;     
+	unsigned short biBitCount;     
+	unsigned int   biCompression;   
+	unsigned int   biSizeImage;      
+	int            biXPelsPerMeter; 
+	int            biYPelsPerMeter; 
+	unsigned int   biClrUsed;        
+	unsigned int   biClrImportant; 
+} BITMAPINFOHEADER;
+
+typedef struct _RGBTRIPLE           
+{
+	unsigned char rgbtBlue;         
+	unsigned char rgbtGreen;        
+	unsigned char rgbtRed;         
+} RGBTRIPLE;
+#pragma pack(pop)
+
+int main() 
+{
+	FILE *fpBmp;
+	FILE *fpResult;
+	BITMAPFILEHEADER fileHeader;
+	BITMAPINFOHEADER infoHeader;
+
+	unsigned char *image;
+	int size;
+	int width, height;
+	int padding;
+
+	fpBmp = fopen("lena512.bmp","rb");
+
+	if (fpBmp == NULL) return 0;
+
+	if (fread(&fileHeader, sizeof(BITMAPFILEHEADER), 1, fpBmp) < 1) 
+	{
+		fclose(fpBmp);
+		return 0;
+	}
+
+	if (fileHeader.bfType != 'MB')
+	{
+		fclose(fpBmp);
+		return 0;
+	}
+
+	if (fread(&infoHeader, sizeof(BITMAPINFOHEADER), 1, fpBmp) < 1)
+	{
+		fclose(fpBmp);
+		return 0;
+	}
+
+	size = infoHeader.biSizeImage;
+	width = infoHeader.biWidth;
+	height = infoHeader.biHeight;
+	padding = (PIXEL_ALIGN - ((width * PIXEL_SIZE) % PIXEL_ALIGN)) % PIXEL_ALIGN;
+
+	if (size == 0)   
+	{
+		size = (width * PIXEL_SIZE + padding) * height;
+	}
+	
+	image = (char*)malloc(size);
+
+	if (fread(image, size, 1, fpBmp) < 1)
+	{
+		fclose(fpBmp);
+		return 0;
+	}
+
+	fclose(fpBmp);
+
+	fpResult = fopen("lena512_gray.bmp", "w");
+	if (fpResult == NULL)
+	{
+		free(image);
+		return 0;
+	}
+
+	for (int y = height - 1; y >= 0; y--)
+	{
+		for (int x = 0; x < width; x++)
+		{
+			int index = (x * PIXEL_SIZE) + (y * (width * PIXEL_SIZE)) + (padding * y);
+
+			RGBTRIPLE *pixel = (RGBTRIPLE *)&image[index];
+
+			unsigned char blue = pixel->rgbtBlue;
+			unsigned char green = pixel->rgbtGreen;
+			unsigned char red = pixel->rgbtRed;
+
+			unsigned char gray = (red + green + blue) / PIXEL_SIZE;
+
+			pixel->rgbtBlue = gray;
+			pixel->rgbtGreen = gray;
+			pixel->rgbtRed = gray;
+		}
+	}
+
+	fwrite(&fileHeader, sizeof(BITMAPFILEHEADER), 1, fpResult);
+	fwrite(&infoHeader, sizeof(BITMAPINFOHEADER), 1, fpResult);
+	fwrite(image, size, 1, fpResult);
+
+	fclose(fpResult);   
+
+	free(image);
+	return 0;
+}
+~~~
+
