@@ -81,35 +81,35 @@ bitmap file은 다음과 같은 구조로 이루어져 있습니다.
 앞서 정리한 Bitmap file의 구조체를 다음과 같이 작성할 수 있습니다. 
 ~~~C
 #pragma pack(push, 1)
-typedef struct _BITMAPFILEHEADER
+typedef struct FILEHEADER
 {
-	unsigned short   bfType;
-	unsigned int   bfSize;         
-	unsigned short bfReserved1;   
-	unsigned short bfReserved2;     
-	unsigned int   bfOffBits;
-} BITMAPFILEHEADER;
+	unsigned short bfType;
+	unsigned long bfSize;
+	unsigned short bfReserved1;
+	unsigned short bfReserved2;
+	unsigned long bfOffBits;
+} FILEHEADER;
 
-typedef struct _BITMAPINFOHEADER   
+typedef struct INFOHEADER
 {
-	unsigned int   biSize;         
-	int            biWidth;         
-	int            biHeight;      
-	unsigned short biPlanes;     
-	unsigned short biBitCount;     
-	unsigned int   biCompression;   
-	unsigned int   biSizeImage;      
-	int            biXPelsPerMeter; 
-	int            biYPelsPerMeter; 
-	unsigned int   biClrUsed;        
-	unsigned int   biClrImportant; 
-} BITMAPINFOHEADER;
+	unsigned long biSize;
+	long biWidth;
+	long biHeight;
+	unsigned short biPlanes;
+	unsigned short biBitCount;
+	unsigned long biCompression;
+	unsigned long biSizeImage;
+	long biXPelsPerMeter;
+	long biYPelsPerMeter;
+	unsigned long biClrUsed;
+	unsigned long biClrImportant;
+} INFOHEADER;
 
-typedef struct _RGBTRIPLE           
+typedef struct RGBTRIPLE
 {
-	unsigned char rgbtBlue;         
-	unsigned char rgbtGreen;        
-	unsigned char rgbtRed;         
+	unsigned char rgbtBlue;
+	unsigned char rgbtGreen;
+	unsigned char rgbtRed;
 } RGBTRIPLE;
 #pragma pack(pop)
 ~~~
@@ -119,41 +119,38 @@ typedef struct _RGBTRIPLE
 
 -----------
 ~~~C
-int main() 
+int main()
 {
-	FILE *fpBmp;
-	FILE *fpResult;
-	BITMAPFILEHEADER fileHeader;
-	BITMAPINFOHEADER infoHeader;
+	FILE *fp;
+	FILEHEADER fileHeader;
+	INFOHEADER infoHeader;
 
-	unsigned char *image;
-	int size;
-	int width, height;
-	int padding;
+	unsigned char *img;
+	int padding, size;
 ~~~
 * 파일의 헤더 정보를 담을 수 있게 fileHeader, infoHeader를 선언하고 각종 변수를 선언합니다.
 
 -------------
 ~~~C
-	fpBmp = fopen("lena512.bmp","rb");
+	fp = fopen("lena512.bmp", "rb");
 
-	if (fpBmp == NULL) return 0;
+	if (fp == NULL) return 0;
 
-	if (fread(&fileHeader, sizeof(BITMAPFILEHEADER), 1, fpBmp) < 1) 
+	if (fread(&fileHeader, sizeof(FILEHEADER), 1, fp) < 1)
 	{
-		fclose(fpBmp);
+		fclose(fp);
 		return 0;
 	}
 
 	if (fileHeader.bfType != 'MB')
 	{
-		fclose(fpBmp);
+		fclose(fp);
 		return 0;
 	}
 
-	if (fread(&infoHeader, sizeof(BITMAPINFOHEADER), 1, fpBmp) < 1)
+	if (fread(&infoHeader, sizeof(INFOHEADER), 1, fp) < 1)
 	{
-		fclose(fpBmp);
+		fclose(fp);
 		return 0;
 	}
 ~~~
@@ -165,12 +162,10 @@ int main()
 
 ----------
 ~~~C
-	size = infoHeader.biSizeImage;
-	width = infoHeader.biWidth;
-	height = infoHeader.biHeight;
-	padding = (PIXEL_ALIGN - ((width * PIXEL_SIZE) % PIXEL_ALIGN)) % PIXEL_ALIGN;
+	padding = (PIXEL_ALIGN - ((infoHeader.biWidth * PIXEL_SIZE) % PIXEL_ALIGN)) % PIXEL_ALIGN;
+	size = (infoHeader.biWidth * PIXEL_SIZE + padding) * infoHeader.biHeight;
 ~~~
-* 편의를 위해 이미지의 size, width, height를 새로운 변수로 지정하고 padding을 계산합니다.
+* 이미지의 size와 padding을 계산합니다.
 
 padding이란?
 >*비트맵 포맷은 효율적인 데이터 처리를 위해 픽셀 데이터의 가로 크기가 4의 배수가 아니라면 남는 공간에 0을 채워 4의 배수로 만들어 저장합니다. 이 남는 공간을 padding이라고 하고, 픽셀 데이터를 읽기 위해서는 padding이 얼마나 채워졌는지 알아야 합니다.*
@@ -186,53 +181,34 @@ padding = (PIXEL_ALIGN - ((width * PIXEL_SIZE) % PIXEL_ALIGN)) % PIXEL_ALIGN;
 
 ------------
 ~~~C
-	if (size == 0)   
-	{
-		size = (width * PIXEL_SIZE + padding) * height;
-	}
-~~~
-* 위에서 바이너리 코드를 해석할 때, 압축을 하지 않았을 때는 biSizeImage 값이 0임을 알 수 있었습니다. 따라서 이러한 경우에 대비하여 size를 계산하는 코드를 추가로 작성합니다. 
+	img = (char*)malloc(size);
 
-----------
-~~~C
-	image = (char*)malloc(size);
-
-	if (fread(image, size, 1, fpBmp) < 1)
+	if (fread(img, size, 1, fp) < 1)
 	{
-		fclose(fpBmp);
+		fclose(fp);
+		free(img);
 		return 0;
 	}
+	fclose(fp);
 
-	fclose(fpBmp);
-
-	fpResult = fopen("lena512_gray.bmp", "w");
-	if (fpResult == NULL)
-	{
-		free(image);
-		return 0;
-	}
+	fp = fopen("gray.bmp", "w");
+	if (fp == NULL) return 0;
 ~~~
-* 픽셀 데이터 저장을 위한 image에 메모리를 픽셀 데이터 크기만큼 동적 할당하고, fread를 통해 바이너리 코드를 읽어줍니다. 또한, grayscale로 변경된 이미지를 저장하기 위한 파일 포인터 또한 열어줍니다.
+* 픽셀 데이터 저장을 위한 img에 메모리를 픽셀 데이터 크기만큼 동적 할당하고, fread를 통해 바이너리 코드를 읽어줍니다. 또한, grayscale로 변경된 이미지를 저장하기 위한 파일 포인터 또한 열어줍니다.
 
 -------------
 ~~~C
-	for (int y = height - 1; y >= 0; y--)
+	for (int y = infoHeader.biHeight - 1; y >= 0; y--)
 	{
-		for (int x = 0; x < width; x++)
+		for (int x = 0; x < infoHeader.biWidth; x++)
 		{
-			int index = (x * PIXEL_SIZE) + (y * (width * PIXEL_SIZE)) + (padding * y);
+			int index = (x * PIXEL_SIZE) + (y * ((infoHeader.biWidth * PIXEL_SIZE) + padding));
 
-			RGBTRIPLE *pixel = (RGBTRIPLE *)&image[index];
+			RGBTRIPLE *pixel = (RGBTRIPLE *)&img[index];
 
-			unsigned char blue = pixel->rgbtBlue;
-			unsigned char green = pixel->rgbtGreen;
-			unsigned char red = pixel->rgbtRed;
+			unsigned char gray = (pixel->rgbtBlue + pixel->rgbtGreen + pixel->rgbtRed) / PIXEL_SIZE;
 
-			unsigned char gray = (red + green + blue) / PIXEL_SIZE;
-
-			pixel->rgbtBlue = gray;
-			pixel->rgbtGreen = gray;
-			pixel->rgbtRed = gray;
+			pixel->rgbtRed = pixel->rgbtGreen = pixel->rgbtBlue = gray;
 		}
 	}
 ~~~
@@ -249,13 +225,13 @@ padding = (PIXEL_ALIGN - ((width * PIXEL_SIZE) % PIXEL_ALIGN)) % PIXEL_ALIGN;
 
 ----------
 ~~~C
-	fwrite(&fileHeader, sizeof(BITMAPFILEHEADER), 1, fpResult);
-	fwrite(&infoHeader, sizeof(BITMAPINFOHEADER), 1, fpResult);
-	fwrite(image, size, 1, fpResult);
+	fwrite(&fileHeader, sizeof(FILEHEADER), 1, fp);
+	fwrite(&infoHeader, sizeof(INFOHEADER), 1, fp);
+	fwrite(img, size, 1, fp);
 
-	fclose(fpResult);   
+	fclose(fp);
+	free(img);
 
-	free(image);
 	return 0;
 }
 ~~~
@@ -267,130 +243,109 @@ padding = (PIXEL_ALIGN - ((width * PIXEL_SIZE) % PIXEL_ALIGN)) % PIXEL_ALIGN;
 #include<stdio.h>
 #include<stdlib.h>
 
-#define PIXEL_SIZE   3   
-#define PIXEL_ALIGN  4
+#define PIXEL_SIZE 3
+#define PIXEL_ALIGN 4
 
 #pragma pack(push, 1)
-typedef struct _BITMAPFILEHEADER
+typedef struct FILEHEADER
 {
-	unsigned short   bfType;
-	unsigned int   bfSize;         
-	unsigned short bfReserved1;   
-	unsigned short bfReserved2;     
-	unsigned int   bfOffBits;
-} BITMAPFILEHEADER;
+	unsigned short bfType;
+	unsigned long bfSize;
+	unsigned short bfReserved1;
+	unsigned short bfReserved2;
+	unsigned long bfOffBits;
+} FILEHEADER;
 
-typedef struct _BITMAPINFOHEADER   
+typedef struct INFOHEADER
 {
-	unsigned int   biSize;         
-	int            biWidth;         
-	int            biHeight;      
-	unsigned short biPlanes;     
-	unsigned short biBitCount;     
-	unsigned int   biCompression;   
-	unsigned int   biSizeImage;      
-	int            biXPelsPerMeter; 
-	int            biYPelsPerMeter; 
-	unsigned int   biClrUsed;        
-	unsigned int   biClrImportant; 
-} BITMAPINFOHEADER;
+	unsigned long biSize;
+	long biWidth;
+	long biHeight;
+	unsigned short biPlanes;
+	unsigned short biBitCount;
+	unsigned long biCompression;
+	unsigned long biSizeImage;
+	long biXPelsPerMeter;
+	long biYPelsPerMeter;
+	unsigned long biClrUsed;
+	unsigned long biClrImportant;
+} INFOHEADER;
 
-typedef struct _RGBTRIPLE           
+typedef struct RGBTRIPLE
 {
-	unsigned char rgbtBlue;         
-	unsigned char rgbtGreen;        
-	unsigned char rgbtRed;         
+	unsigned char rgbtBlue;
+	unsigned char rgbtGreen;
+	unsigned char rgbtRed;
 } RGBTRIPLE;
 #pragma pack(pop)
 
-int main() 
+int main()
 {
-	FILE *fpBmp;
-	FILE *fpResult;
-	BITMAPFILEHEADER fileHeader;
-	BITMAPINFOHEADER infoHeader;
+	FILE *fp;
+	FILEHEADER fileHeader;
+	INFOHEADER infoHeader;
 
-	unsigned char *image;
-	int size;
-	int width, height;
-	int padding;
+	unsigned char *img;
+	int padding, size;
 
-	fpBmp = fopen("lena512.bmp","rb");
+	fp = fopen("lena512.bmp", "rb");
 
-	if (fpBmp == NULL) return 0;
+	if (fp == NULL) return 0;
 
-	if (fread(&fileHeader, sizeof(BITMAPFILEHEADER), 1, fpBmp) < 1) 
+	if (fread(&fileHeader, sizeof(FILEHEADER), 1, fp) < 1)
 	{
-		fclose(fpBmp);
+		fclose(fp);
 		return 0;
 	}
 
 	if (fileHeader.bfType != 'MB')
 	{
-		fclose(fpBmp);
+		fclose(fp);
 		return 0;
 	}
 
-	if (fread(&infoHeader, sizeof(BITMAPINFOHEADER), 1, fpBmp) < 1)
+	if (fread(&infoHeader, sizeof(INFOHEADER), 1, fp) < 1)
 	{
-		fclose(fpBmp);
+		fclose(fp);
 		return 0;
 	}
 
-	size = infoHeader.biSizeImage;
-	width = infoHeader.biWidth;
-	height = infoHeader.biHeight;
-	padding = (PIXEL_ALIGN - ((width * PIXEL_SIZE) % PIXEL_ALIGN)) % PIXEL_ALIGN;
+	padding = (PIXEL_ALIGN - ((infoHeader.biWidth * PIXEL_SIZE) % PIXEL_ALIGN)) % PIXEL_ALIGN;
+	size = (infoHeader.biWidth * PIXEL_SIZE + padding) * infoHeader.biHeight;
 
-	if (size == 0)   
-	{
-		size = (width * PIXEL_SIZE + padding) * height;
-	}
-	
-	image = (char*)malloc(size);
+	img = (char*)malloc(size);
 
-	if (fread(image, size, 1, fpBmp) < 1)
+	if (fread(img, size, 1, fp) < 1)
 	{
-		fclose(fpBmp);
+		fclose(fp);
+		free(img);
 		return 0;
 	}
+	fclose(fp);
 
-	fclose(fpBmp);
+	fp = fopen("gray.bmp", "w");
+	if (fp == NULL) return 0;
 
-	fpResult = fopen("lena512_gray.bmp", "w");
-	if (fpResult == NULL)
+	for (int y = infoHeader.biHeight - 1; y >= 0; y--)
 	{
-		free(image);
-		return 0;
-	}
-
-	for (int y = height - 1; y >= 0; y--)
-	{
-		for (int x = 0; x < width; x++)
+		for (int x = 0; x < infoHeader.biWidth; x++)
 		{
-			int index = (x * PIXEL_SIZE) + (y * (width * PIXEL_SIZE)) + (padding * y);
+			int index = (x * PIXEL_SIZE) + (y * ((infoHeader.biWidth * PIXEL_SIZE) + padding));
 
-			RGBTRIPLE *pixel = (RGBTRIPLE *)&image[index];
+			RGBTRIPLE *pixel = (RGBTRIPLE *)&img[index];
 
-			unsigned char blue = pixel->rgbtBlue;
-			unsigned char green = pixel->rgbtGreen;
-			unsigned char red = pixel->rgbtRed;
+			unsigned char gray = (pixel->rgbtBlue + pixel->rgbtGreen + pixel->rgbtRed) / PIXEL_SIZE;
 
-			unsigned char gray = (red + green + blue) / PIXEL_SIZE;
-
-			pixel->rgbtBlue = gray;
-			pixel->rgbtGreen = gray;
-			pixel->rgbtRed = gray;
+			pixel->rgbtRed = pixel->rgbtGreen = pixel->rgbtBlue = gray;
 		}
 	}
+	fwrite(&fileHeader, sizeof(FILEHEADER), 1, fp);
+	fwrite(&infoHeader, sizeof(INFOHEADER), 1, fp);
+	fwrite(img, size, 1, fp);
 
-	fwrite(&fileHeader, sizeof(BITMAPFILEHEADER), 1, fpResult);
-	fwrite(&infoHeader, sizeof(BITMAPINFOHEADER), 1, fpResult);
-	fwrite(image, size, 1, fpResult);
+	fclose(fp);
+	free(img);
 
-	fclose(fpResult);   
-
-	free(image);
 	return 0;
 }
 ~~~
