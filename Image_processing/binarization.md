@@ -1,3 +1,47 @@
+## 영상 이진화(Binarization)
+
+**영상 이진화**는 이미지의 모든 픽셀을 흑과 백으로만 표현하는 것을 말합니다. 픽셀 데이터의 값을 특정 경계(threshold)를 기준으로, 기준보다 높은 값을 가지면 픽셀의 값을 255(흰색), 낮은 값을 가지면 0(검은색)으로 바꾸어주어 영상 이진화를 실현할 수 있습니다. 
+
+
+
+기준이 되는 임계점(threshold point)을 설정하는 방법에 따라 전역 이진화, 지역 이진화 등으로 구분되지만, 오늘은 **모든 픽셀의 값에 같은 임계점을 적용하는** 전역 이진화 방법으로 영상 이진화를 구현해보겠습니다.
+
+---
+
+사실 앞서 실습했던 [Change truecolor image to grayscale image](https://github.com/skadud8951/TIL/blob/main/Image_processing/change_gray2.md) 코드에 간단한 수정을 하면  Binarization을 실현할 수 있습니다.
+
+~~~c
+	for (int y = infoHeader.biHeight - 1; y >= 0; y--)
+	{
+		for (int x = 0; x < infoHeader.biWidth; x++)
+		{
+			int index = (x * PIXEL_SIZE) + (y * ((infoHeader.biWidth * PIXEL_SIZE) + padding));
+
+			RGBTRIPLE *pixel = (RGBTRIPLE *)&img[index];
+
+			unsigned char gray = (pixel->rgbtBlue + pixel->rgbtGreen + pixel->rgbtRed) / 3;
+			
+			if (gray <= 128) gray = 0;
+			else gray = 255;
+
+			img_output[x + y * (infoHeader.biWidth + padding)] = gray;
+		}
+	}
+~~~
+
+위 코드는 24비트 트루컬러 이미지를 8비트 그레이스케일 이미지로 바꾸는 코드 중 일부입니다. 24비트 이미지의 RGB 평균 값을 그레이 스케일 이미지의 픽셀 데이터 값으로 넣어주게 되는데, 이 때 if문을 사용하여 특정 임계값을 기준으로 픽셀 데이터 값을 0과 255로 변경해주면 됩니다.
+
+~~~C
+if (gray <= 128) gray = 0;
+	else gray = 255;
+~~~
+
+---
+
+
+
+## 2. 전체 코드와 실행 결과
+
 ~~~c
 #define _CRT_SECURE_NO_WARNINGS
 #include<stdio.h>
@@ -137,3 +181,5 @@ int main()
 	return 0;
 }
 ~~~
+
+<img src="https://user-images.githubusercontent.com/48755185/103415076-f2413e00-4bc3-11eb-9704-0c0bf02db14e.JPG" alt="binary" style="zoom:50%;" />
