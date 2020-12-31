@@ -6,7 +6,7 @@
 
 ## 1. 8bits bitmap file의 구조 
 
-<img src="C:\Users\김남영\Desktop\비트맵구조2.jpg" alt="비트맵구조2" style="zoom:80%;" />
+![비트맵구조2](https://user-images.githubusercontent.com/48755185/103414183-38949e00-4bc0-11eb-91f3-12f649b08f07.jpg)
 
 ​                                                                                       출처: C언어 코딩 도장
 
