@@ -8,6 +8,7 @@
 #define PIXEL_SIZE 1
 #define PIXEL_ALIGN 4
 
+#pragma pack(push, 1)
 typedef struct FILEHEADER
 {
 	unsigned short bfType;
@@ -39,14 +40,16 @@ typedef struct RGBQUAD
 	unsigned char rgbRed;
 	unsigned char rgbReserved;
 } RGBQUAD;
+#pragma pack(pop)
 
 int main()
 {
 	FILE *fp;
 	FILEHEADER fileheader;
 	INFOHEADER infoheader;
-	int histogram[256];
-	RGBQUAD rgbquad[256];
+	RGBQUAD rgbQuad[256];
+	float histogram[256];
+	unsigned char *result;
 	unsigned char *img;
 	int size, padding;
 
@@ -55,7 +58,7 @@ int main()
 		histogram[i] = 0;
 	}
 
-	fp = fopen("lena512.bmp", "rb"); //grayscale
+	fp = fopen("gray.bmp", "rb"); //grayscale
 	if (fp == NULL) return 0;
 
 	if (fread(&fileheader, sizeof(FILEHEADER), 1, fp) < 1)
@@ -69,12 +72,85 @@ int main()
 		fclose(fp);
 		return 0;
 	}
-
-	fseek(fp, fileheader.bfOffBits, SEEK_SET);
-
 	
-	img = (char*)malloc();
-	fread(img, sizeof(char), 256, fp);
+	if (fread(&infoheader, sizeof(INFOHEADER), 1, fp) < 1)
+	{
+		fclose(fp);
+		return 0;
+	}
+
+	if (fread(&rgbQuad, sizeof(RGBQUAD), 256, fp) < 256)
+	{
+		fclose(fp);
+		return 0;
+	}
+
+//	fseek(fp, fileheader.bfOffBits, SEEK_SET);
+	
+	padding = (PIXEL_ALIGN - ((infoheader.biWidth * PIXEL_SIZE) % PIXEL_ALIGN)) % PIXEL_ALIGN;
+	size = (infoheader.biWidth + padding) * infoheader.biHeight;
+
+	img = (char*)malloc(size);
+	result = (char*)malloc(256 * 256);
+
+	if (fread(img, size, 1, fp) < 1)
+	{
+		fclose(fp);
+		free(img);
+		return 0;
+	}
+	float sum = 0;
+	for (int y = infoheader.biHeight - 1; y >= 0; y--)
+	{
+		for (int x = 0; x < infoheader.biWidth; x++)
+		{
+			int index = img[x + y * (infoheader.biHeight + padding)];
+			//printf("%d\n", index);
+			histogram[index]++;
+			sum++;
+		}
+	}
+	float scale = (255.0 / sum);
+	for (int i = 0; i < 256; i++) 
+	{
+		histogram[i] = histogram[i] * scale;
+	}
+	for (int i = 0; i < 256; i++)
+	{
+		printf("%d\n", (int)histogram[i]);
+	}
+	for (int x = 0; x < 256; x++)
+	{
+		int y = 0;
+		while((int)histogram[x] != y)
+		{
+			result[x + y * (infoheader.biHeight + padding)] = 0;
+			y++;
+		}
+		while (y != 256)
+		{
+			result[x + y * (infoheader.biHeight + padding)] = 255;
+			y++;
+		}
+	}
+
+	fclose(fp);
+	
+	fp = fopen("result.bmp", "wb");
+
+	infoheader.biHeight = 256;
+	infoheader.biWidth = 256;
+	fileheader.bfSize = infoheader.biWidth * (infoheader.biHeight + padding) + fileheader.bfOffBits;
+
+	fwrite(&fileheader, sizeof(FILEHEADER), 1, fp);
+	fwrite(&infoheader, sizeof(INFOHEADER), 1, fp);
+	fwrite(&rgbQuad, sizeof(RGBQUAD), 256, fp);
+	fwrite(result, 1, 256 * 256, fp);
+	
+	fclose(fp);
+	free(img);
+	free(result);
+	return 0;
 
 }
 ~~~
