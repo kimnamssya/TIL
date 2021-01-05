@@ -1,4 +1,4 @@
-## Histogram (미완성)
+## Histogram
 
 ~~~c
 #define _CRT_SECURE_NO_WARNINGS
