@@ -48,10 +48,14 @@ int main()
 	FILEHEADER fileheader;
 	INFOHEADER infoheader;
 	RGBQUAD rgbQuad[256];
-	float histogram[256];
+	int histogram[256];
 	unsigned char *result;
 	unsigned char *img;
 	int size, padding;
+	int max = 0;
+	int size_output;
+	int histo_y;
+	float scale;
 
 	for (int i = 0; i < 256; i++)
 	{
@@ -91,7 +95,6 @@ int main()
 	size = (infoheader.biWidth + padding) * infoheader.biHeight;
 
 	img = (char*)malloc(size);
-	result = (char*)malloc(256 * 256);
 
 	if (fread(img, size, 1, fp) < 1)
 	{
@@ -99,38 +102,40 @@ int main()
 		free(img);
 		return 0;
 	}
-	float sum = 0;
 	for (int y = infoheader.biHeight - 1; y >= 0; y--)
 	{
 		for (int x = 0; x < infoheader.biWidth; x++)
 		{
 			int index = img[x + y * (infoheader.biHeight + padding)];
-			//printf("%d\n", index);
 			histogram[index]++;
-			sum++;
 		}
-	}
-	float scale = (255.0 / sum);
-	for (int i = 0; i < 256; i++) 
-	{
-		histogram[i] = histogram[i] * scale;
 	}
 	for (int i = 0; i < 256; i++)
 	{
-		printf("%d\n", (int)histogram[i]);
+		if (max < histogram[i]) max = histogram[i];
 	}
+	scale = 255.0 / max; 
+	printf("%.3f\n", scale);
+	for (int i = 0; i < 256; i++)
+	{
+		histogram[i] = (int)((float)histogram[i] * scale);
+	}
+
+	size_output = 256 * 256;
+	result = (char*)malloc(size_output);
+
 	for (int x = 0; x < 256; x++)
 	{
-		int y = 0;
-		while((int)histogram[x] != y)
+		histo_y = 0;
+		while(histogram[x] != histo_y)
 		{
-			result[x + y * (infoheader.biHeight + padding)] = 0;
-			y++;
+			result[x + histo_y * 256] = 0;
+			histo_y++;
 		}
-		while (y != 256)
+		while (histo_y != 256)
 		{
-			result[x + y * (infoheader.biHeight + padding)] = 255;
-			y++;
+			result[x + histo_y * 256] = 255;
+			histo_y++;
 		}
 	}
 
@@ -145,7 +150,7 @@ int main()
 	fwrite(&fileheader, sizeof(FILEHEADER), 1, fp);
 	fwrite(&infoheader, sizeof(INFOHEADER), 1, fp);
 	fwrite(&rgbQuad, sizeof(RGBQUAD), 256, fp);
-	fwrite(result, 1, 256 * 256, fp);
+	fwrite(result, size_output, 1, fp);
 	
 	fclose(fp);
 	free(img);
