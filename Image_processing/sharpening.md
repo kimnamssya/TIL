@@ -146,4 +146,4 @@ int main()
 
 ~~~
 
-![smoothing](https://user-images.githubusercontent.com/48755185/104132464-b9257c80-53c0-11eb-9ffd-d6f9abf3f088.JPG)
+![sharpening](https://user-images.githubusercontent.com/48755185/104132467-bc206d00-53c0-11eb-9e8c-16aee33ca638.JPG)
