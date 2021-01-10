@@ -159,3 +159,4 @@ int main()
 
 }
 ~~~
+![histogram](https://user-images.githubusercontent.com/48755185/104132540-52549300-53c1-11eb-97cb-b4fa8bf887a7.JPG)
