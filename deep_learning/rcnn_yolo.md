@@ -41,7 +41,9 @@
 
 
 
-<img src="C:\Users\김남영\Desktop\fast_rcnn.JPG" style="zoom:80%;" />
+![fast_rcnn](https://user-images.githubusercontent.com/48755185/105841944-d1300980-6018-11eb-93f3-48f07d721f67.JPG)
+
+
 
 #### 2. Fast R-CNN architecture and training
 
