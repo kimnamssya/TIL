@@ -61,7 +61,8 @@
 
    
 
-<img src="C:\Users\김남영\Desktop\pooling.JPG" style="zoom:80%;" />
+![pooling](https://user-images.githubusercontent.com/48755185/105841951-d4c39080-6018-11eb-80c2-29153e8ee240.JPG)
+
 
 ##### 2-1. RoI pooling layer
 
@@ -93,7 +94,7 @@ Large fully connected layer는 truncated SVD를 통해 압축함으로써 가속
 
 [Faster R-CNN](https://arxiv.org/pdf/1506.01497.pdf)
 
-<img src="C:\Users\김남영\Desktop\fater.JPG" style="zoom:80%;" />
+![faster_rcnn](https://user-images.githubusercontent.com/48755185/105841962-d8efae00-6018-11eb-9853-adce07e2b4b0.JPG)
 
  ##### 1. Introduction
 
@@ -103,7 +104,7 @@ Fast R-CNN이 real-time에 가까운 성취를 이뤘지만(proposal 과정을 �
 
 RPN은 직사각형의 이미지를 input으로 받고 직사각형의 output을 낸다. 각각의 proposal은 objectness score를 가진다. 이 과정은 fully convolutional network에 의해 이루어진다(convolution layer에 의해 생성된 feature  map에 fully convolutional network를 slide 시킨다.).
 
-<img src="C:\Users\김남영\Desktop\anchors.JPG" style="zoom:80%;" />
+![anchors](https://user-images.githubusercontent.com/48755185/105841970-dbea9e80-6018-11eb-98ea-fbf61388c930.JPG)
 
 ##### 3. Anchors
 
